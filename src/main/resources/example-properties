@@ -1,0 +1,18 @@
+rabbitmq:
+  host: 
+  port: 
+  vHost: 
+  username: 
+  password: 
+  exchange: 
+
+sfc:
+  consumerKey: 
+  keyStore:
+  storePassword:
+  alias:
+  principal: 
+  tokenEndpoint: 
+  # audienceURL: En default er givet af connector config.  
+  gRpcHost: 
+  gRpcPort: 

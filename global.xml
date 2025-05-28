@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:amqp="http://www.mulesoft.org/schema/mule/amqp"
+	xmlns:salesforce-pub-sub="http://www.mulesoft.org/schema/mule/salesforce-pub-sub" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce-pub-sub http://www.mulesoft.org/schema/mule/salesforce-pub-sub/current/mule-salesforce-pub-sub.xsd
+http://www.mulesoft.org/schema/mule/amqp http://www.mulesoft.org/schema/mule/amqp/current/mule-amqp.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+	<salesforce-pub-sub:pubsub-config name="Salesforce_PubSub_Config" doc:name="Salesforce PubSub Config" doc:id="6d6b5eed-cce6-4cdb-aeba-ef27d8d5b98e" >
+		<salesforce-pub-sub:jwt-connection consumerKey="3MVG9NAs39dXlx5yZWi8u8Dn_CEnfUYlOe50hEpTL2_bA5B83vkLREJfn7TsfWlDOyiao.h7IKF12cwFY70AS" keyStore="C:\Users\klj600\kstore\mykeystore.jks" storePassword="changeit" certificateAlias="myalias" principal="wiom@adm.ku.dk.kudev" tokenEndpoint="https://test.salesforce.com/services/oauth2/token" />
+	</salesforce-pub-sub:pubsub-config>
+	<amqp:config name="AMQP_Config" doc:name="AMQP Config" doc:id="e6526538-55bc-4167-897b-8d37ac7945cb" >
+		<amqp:connection host="localhost" username="user" password="password" port="5672"/>
+	</amqp:config>
+	<os:object-store name="MainObjectStore" doc:name="Object store" doc:id="853e91b9-be7d-42e1-b55f-a234c38e469c" entryTtl="3600" config-ref="ObjectStore"/>
+	<os:config name="ObjectStore" doc:name="ObjectStore Config" doc:id="4ebddb00-0078-4db0-8a4d-b6684a42e6a6" >
+		<os:connection />
+	</os:config>
+	<validation:config name="Validation_Config" doc:name="Validation Config" doc:id="0ba1c131-7213-40d8-a9b5-fb500796c48e" />
+	<os:object-store name="RecoveryObjectStore" doc:name="Object store" doc:id="7b6fda03-4484-4dd1-a785-45c56e65284e" entryTtl="24" entryTtlUnit="HOURS" config-ref="ObjectStore"/>
+	<os:object-store name="inFlightStore" doc:name="Object store" doc:id="3aaaea83-79aa-4bed-86ab-2ee4d29e31b4" entryTtl="30" entryTtlUnit="MINUTES" config-ref="ObjectStore"/>
+</mule>

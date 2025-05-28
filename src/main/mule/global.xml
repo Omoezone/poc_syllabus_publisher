@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:amqp="http://www.mulesoft.org/schema/mule/amqp"
+	xmlns:salesforce-pub-sub="http://www.mulesoft.org/schema/mule/salesforce-pub-sub" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce-pub-sub http://www.mulesoft.org/schema/mule/salesforce-pub-sub/current/mule-salesforce-pub-sub.xsd
+http://www.mulesoft.org/schema/mule/amqp http://www.mulesoft.org/schema/mule/amqp/current/mule-amqp.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+	<salesforce-pub-sub:pubsub-config name="Salesforce_PubSub_Config" doc:name="Salesforce PubSub Config" doc:id="f6d35d71-d3e8-4215-91e8-205291bb7375" >
+		<salesforce-pub-sub:jwt-connection consumerKey="${sfc.consumerKey}" keyStore="${sfc.keyStore}" storePassword="${sfc.storePassword}" certificateAlias="${sfc.alias}" principal="${sfc.principal}" tokenEndpoint="${sfc.tokenEndpoint}" host="${sfc.gRpcHost}" port="${sfc.gRpcPort}"/>
+	</salesforce-pub-sub:pubsub-config>
+	<amqp:config name="AMQP_Config" doc:name="AMQP Config" doc:id="38af7633-f098-4aae-b568-04eb8043fd0e" >
+		<amqp:connection host="${rabbitmq.host}" username="${rabbitmq.username}" password="${rabbitmq.password}" port="${rabbitmq.port}" virtualHost="${rabbitmq.vHost}"/>
+	</amqp:config>
+	<os:config name="MainObjectStoreConfig" doc:name="ObjectStore Config" doc:id="66986fcb-ce66-4c2b-953e-f920ccdc9d12" >
+		<os:connection />
+	</os:config>
+	<os:object-store name="MainFlowOS" doc:name="Object store" doc:id="b011cb57-194a-49b1-ae8b-b7af67ba966e" entryTtl="24" entryTtlUnit="HOURS" config-ref="MainObjectStoreConfig"/>
+	<os:object-store name="ErrorOS" doc:name="Object store" doc:id="655a47a0-b1eb-40b3-9d20-a0ec35b38905" entryTtl="24" entryTtlUnit="HOURS" maxEntries="5" expirationIntervalUnit="HOURS" config-ref="MainObjectStoreConfig"/>
+	<validation:config name="Validation_Config" doc:name="Validation Config" doc:id="0eea8dee-7fc2-4df5-bfb7-fefabebd7431" />
+	<configuration-properties doc:name="Configuration properties" doc:id="2c2196a9-8400-4dba-a572-aa1d971edae8" file="properties/local-properties.yaml" />
+	<global-property doc:name="Global Property" doc:id="e6c03a60-895e-4fbf-9a7d-6b6262a528de" name="env" value="local" />
+	
+</mule>

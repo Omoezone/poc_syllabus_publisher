@@ -1,0 +1,64 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="eventPayload" format="json">
+      <types:shape format="weave" example="schemas/eventPayload.json"><![CDATA[%dw 2.0
+
+type eventPayload = {|
+  eventId: String, 
+  replayId: Number {"typeId": "int"}, 
+  event: {|
+    CreatedDate: Number {"typeId": "double"}, 
+    CreatedById: String, 
+    AcademicSessionId__c: String, 
+    Attendance__c: String, 
+    CampusId__c: String, 
+    CapacityMax__c: Number {"typeId": "int"}, 
+    CapacityMin__c: Number {"typeId": "int"}, 
+    CourseOfferingId__c: String, 
+    Description__c: String, 
+    Duration__c: Number {"typeId": "int"}, 
+    DurationUnit__c: String, 
+    GroupWishPossiblities__c: String, 
+    JointTeachingId__c: String, 
+    Language__c: String, 
+    LearningActivityId__c: String, 
+    LegacyId__c: String, 
+    LocationId__c: String, 
+    Name__c: String, 
+    NumberOfGroupSplits__c: Number {"typeId": "int"}, 
+    NumberOfLessonsDVIP__c: Number {"typeId": "int"}, 
+    NumberOfLessonsOther__c: Number {"typeId": "int"}, 
+    NumberOfLessonsVIP__c: Number {"typeId": "int"}, 
+    OfferingPeriod__c: String, 
+    PossibilityForClassRequest__c: Boolean, 
+    RegistrationStatus__c: String, 
+    SchematicPlacement__c: String, 
+    Scope__c: Number {"typeId": "int"}, 
+    SelectionCriteria__c: String, 
+    StatusCourseOffering__c: String, 
+    TeachingForm__c: String, 
+    Type__c: String, 
+    UnitOfScope__c: String, 
+    isUpdate__c: String
+  |}
+|} {"example": "{\\\"eventId\\\":\\\"6f61e685-61e5-4d86-bcb5-e8f048f5a9ac\\\",\\\"replayId\\\":25088766,\\\"event\\\":{\\\"CreatedDate\\\":1747808677206,\\\"CreatedById\\\":\\\"005Pw00000GT8BTIA1\\\",\\\"AcademicSessionId__c\\\":\\\"0vcPw00000000ZVIAY\\\",\\\"Attendance__c\\\":\\\"In person\\/Online\\\",\\\"CampusId__c\\\":\\\"131Pw000001IAZpIAO\\\",\\\"CapacityMax__c\\\":12,\\\"CapacityMin__c\\\":5,\\\"CourseOfferingId__c\\\":\\\"0P0Pw00000001qjKAA\\\",\\\"Description__c\\\":\\\"En fin beskrivelse\\\",\\\"Duration__c\\\":12,\\\"DurationUnit__c\\\":\\\"Semester\\\",\\\"GroupWishPossiblities__c\\\":\\\"Nej\\\",\\\"JointTeachingId__c\\\":\\\"a1gPw000003wkLhIAI\\\",\\\"Language__c\\\":\\\"en\\\",\\\"LearningActivityId__c\\\":\\\"a0jPw00000MXAaDIAX\\\",\\\"LegacyId__c\\\":\\\"\\\",\\\"LocationId__c\\\":\\\"\\\",\\\"Name__c\\\":\\\"POC Learning\\\",\\\"NumberOfGroupSplits__c\\\":4,\\\"NumberOfLessonsDVIP__c\\\":8,\\\"NumberOfLessonsOther__c\\\":12,\\\"NumberOfLessonsVIP__c\\\":2,\\\"OfferingPeriod__c\\\":\\\"2. Semester 24\\/25\\\",\\\"PossibilityForClassRequest__c\\\":false,\\\"RegistrationStatus__c\\\":\\\"On Waiting List\\\",\\\"SchematicPlacement__c\\\":\\\"Tuesday\\\",\\\"Scope__c\\\":8888,\\\"SelectionCriteria__c\\\":\\\"First come, first serve\\\",\\\"StatusCourseOffering__c\\\":\\\"Draft\\\",\\\"TeachingForm__c\\\":\\\"LOCALLY DEFINED\\\",\\\"Type__c\\\":\\\"\\\",\\\"UnitOfScope__c\\\":\\\"Lessons\\\",\\\"isUpdate__c\\\":\\\"true\\\"}}"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#c7725313-0279-4ad6-aa39-cb5c03bb96e9">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="eventPayload"/>
+        </types:message>
+      </types:input-event>
+      <types:output-event>
+        <types:message>
+          <types:payload type="eventPayload"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>

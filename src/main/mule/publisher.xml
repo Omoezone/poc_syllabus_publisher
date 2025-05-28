@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:amqp="http://www.mulesoft.org/schema/mule/amqp"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:salesforce-pub-sub="http://www.mulesoft.org/schema/mule/salesforce-pub-sub" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce-pub-sub http://www.mulesoft.org/schema/mule/salesforce-pub-sub/current/mule-salesforce-pub-sub.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/amqp http://www.mulesoft.org/schema/mule/amqp/current/mule-amqp.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+	
+	<!-- !!! VIGITIGT !!! Der er endnu ikke opsat logik for hvad der skal ske, hvis et event laver fejl mere end 3 gange (Until successfull) -->
+	
+	<flow name="mainFlow" doc:id="af8a1372-7415-41ee-bb1b-8b2737b5d546" >
+		<salesforce-pub-sub:subscribe-channel-listener doc:name="Subscribe channel listener" doc:id="0bba7db0-1582-450a-968d-bd3c5ae1c626" config-ref="Salesforce_PubSub_Config" channelName="/event/offeredLearningActivity_PE__e" eventBatchSize="1" doc:description="brugte pocTestEvent__e før udskiftning til offeredLearningActivity_PE__e">
+			<reconnect />
+			<salesforce-pub-sub:replay-option >
+				<salesforce-pub-sub:replay-id-from-object-store osKey="RecoveryReplayId" osName="ErrorOS"/>
+			</salesforce-pub-sub:replay-option>
+		</salesforce-pub-sub:subscribe-channel-listener>
+		<os:retrieve-all doc:name="Retrieve all" doc:id="5a7900ae-f152-40a6-aa40-bf00b9a1c923" objectStore="ErrorOS" target="existingReplayId"/>
+		<choice doc:name="Save replayId if OS is empty" doc:id="17208e91-5eb1-40fd-a677-4094b1b8e791" >
+			<when expression="#[vars.existingReplayId == null or isEmpty(vars.existingReplayId)]">
+				<logger level="INFO" doc:name="Log first replayId if none exists" doc:id="788eaf87-854e-421e-ae1d-5cc51785f42b" message="CUSTOM: There was no active ReplayId in OS, saving this one!"/>
+				<os:store doc:name="Store initial replayId" doc:id="1d665b0e-e72e-4ad4-a280-df52ec02712a" key="RecoveryReplayId" objectStore="ErrorOS">
+					<os:value ><![CDATA[#[(payload.replayId as Number) - 1]]]></os:value>
+				</os:store>
+			</when>
+		</choice>
+		<until-successful maxRetries="3" doc:name="Retries if error" doc:id="a663c21c-ef4e-4ed7-9a69-f2d9ac0903e9" millisBetweenRetries="10000">
+			<os:retrieve doc:name="Retrieve ReplayId i OS" doc:id="244813a9-a5cb-40c0-98bb-43e06ca6b394" key="RecoveryReplayId" target="amountOfRecoveryObject" objectStore="ErrorOS" />
+			<choice doc:name="Choice" doc:id="50aa0641-f097-4776-b836-a1be7fc06842">
+				<when expression="#[vars.amountOfRecoveryObject == null or isEmpty(vars.amountOfRecoveryObject)]">
+				<raise-error doc:name="Throw error to retry event handling (Max 3 times)" doc:id="f6487620-1e53-44d4-a758-ff84189d5818" type="CUSTOM:REPLAY_EXCHAUSTED" description="CHECK WETHER OR NOT THIS SHOULD BE CHANGED" />
+				</when>
+			<otherwise>
+				<flow-ref doc:name="Handle Event" doc:id="9b5e1410-d9a7-42d4-98eb-2b9e6da292e0" name="handleEvents" />
+				<os:store doc:name="Update the replayId by saving it as current replayId" doc:id="132ee8b4-685c-41c9-8f3f-58e26eacbb53" key="RecoveryReplayId" objectStore="ErrorOS">
+								<os:value><![CDATA[#[payload.replayId as Number]]]></os:value>
+							</os:store>
+					<logger level="INFO" doc:name="Logger" doc:id="1e6b7463-0ae8-47fc-9af8-ba515225db3f" message="#['CUSTOM: Følgende event replayID er færdighåndteret: $(payload.replayId)']"/>
+				</otherwise>
+			</choice>
+		</until-successful>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="deb09376-16cd-406f-bb79-7503b16ed6f7" type="CUSTOM:REPLAY_EXCHAUSTED">
+				<logger level="ERROR" doc:name="Logger" doc:id="c6a53257-69b3-4958-902f-2fc048a62d18" message="Reptry number exchausted - serious issue with event"/>
+				<os:store doc:name="Store ReplayId after continous errors (LOGIK IS MADE TO SKIP: MAYBE CHANGE)" doc:id="265e3fb0-fff9-492c-a74a-f824757b9ade" key="RecoveryReplayId" objectStore="ErrorOS">
+					<os:value><![CDATA[#[(payload.replayId as Number)]]]></os:value>
+				</os:store>
+				<logger level="INFO" doc:name="&lt;&lt; SEND TO MONITORING / EXTERNAL ISSUE HANDLER &gt;&gt;" doc:id="2c087a65-b4da-4809-8432-b0f18bd1fb18" />
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="77eb66a2-b69e-4607-9c84-f4745c715ac0" type="ANY">
+				<logger level="INFO" doc:name="Logger" doc:id="3b4b49ae-7a2a-4b48-b3a4-78112553c103" message="Fejl opstod – gemmer ReplayId  som  #[(payload.replayId as Number) - 1]" />
+				<os:store doc:name="Store ReplayId after error" doc:id="c4fa5af1-12c7-4143-98f1-c6fcbbbe9e46" key="RecoveryReplayId" objectStore="ErrorOS">
+					<os:value><![CDATA[#[(payload.replayId as Number) - 1]]]></os:value>
+				</os:store>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<sub-flow name="handleEvents" doc:id="2dda4069-99e5-423a-ba0a-efdb8d3c092d" >
+		<validation:any doc:name="Any" doc:id="7c6a6da0-4f16-4504-961e-8ff2d0d2b47d">
+			<validation:is-not-blank-string doc:name="Is not blank string" doc:id="c9acc146-df65-4140-a0dc-b58c86150da4" config-ref="Validation_Config" value="#[payload.event.Name__c]" />
+			<validation:is-not-null doc:name="Is not null" doc:id="df73a960-97ad-45a7-9ac6-ff9874c651d4" config-ref="Validation_Config" value="#[payload]" />
+			<validation:is-not-null doc:name="IsUpdate is not null" doc:id="5e29f373-4287-4424-99b3-e876aa335075" config-ref="Validation_Config" value="#[payload.event.isUpdate__c]" />
+		</validation:any>
+		<flow-ref doc:name="postToRabbitMQ" doc:id="73f96089-a829-43aa-84ae-0f5ab4114d91" name="postMessagesToRabbitMQ" />
+		<os:store doc:name="Store successfull events replayId" doc:id="169b11f9-571a-49e6-9a5d-9c1bc2f1c8fb" key="#[payload.replayId]" objectStore="MainFlowOS">
+			<os:value ><![CDATA[#[payload.replayId]]]></os:value>
+		</os:store>
+	</sub-flow>
+	<sub-flow name="postMessagesToRabbitMQ" doc:id="595d1935-1e5b-41ab-8078-c2d94615d129" >
+		<ee:transform doc:name="Ensure transformation to JSON for rabbitMQ" doc:id="c7725313-0279-4ad6-aa39-cb5c03bb96e9" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var eventPayload = payload.event
+---
+{
+	eventId: payload.eventId,
+	replayId: payload.replayId,
+	event: {
+		CreatedDate: eventPayload.CreatedDate,
+		CreatedById: eventPayload.CreatedById,
+		AcademicSessionId: eventPayload.AcademicSessionId__c,
+		Attendance: eventPayload.Attendance__c,
+		CampusId: eventPayload.CampusId__c,
+		CapacityMax: eventPayload.CapacityMax__c,
+		CapacityMin: eventPayload.CapacityMin__c,
+		CourseOfferingId: eventPayload.CourseOfferingId__c,
+		Description: eventPayload.Description__c,
+		Duration: eventPayload.Duration__c,
+		DurationUnit: eventPayload.DurationUnit__c,
+		GroupWishPossiblities: eventPayload.GroupWishPossiblities__c,
+		JointTeachingId: eventPayload.JointTeachingId__c,
+		Language: eventPayload.Language__c,
+		LearningActivityId: eventPayload.LearningActivityId__c,
+		LegacyId: eventPayload.LegacyId__c,
+		LocationId: eventPayload.LocationId__c,
+		Name: eventPayload.Name__c,
+		NumberOfGroupSplits: eventPayload.NumberOfGroupSplits__c,
+		NumberOfLessonsDVIP: eventPayload.NumberOfLessonsDVIP__c,
+		NumberOfLessonsOther: eventPayload.NumberOfLessonsOther__c,
+		NumberOfLessonsVIP: eventPayload.NumberOfLessonsVIP__c,
+		OfferingPeriod: eventPayload.OfferingPeriod__c,
+		PossibilityForClassRequest: eventPayload.PossibilityForClassRequest__c,
+		RegistrationStatus: eventPayload.RegistrationStatus__c,
+		SchematicPlacement: eventPayload.SchematicPlacement__c,
+		Scope: eventPayload.Scope__c,
+		SelectionCriteria: eventPayload.SelectionCriteria__c,
+		StatusCourseOffering: eventPayload.StatusCourseOffering__c,
+		TeachingForm: eventPayload.TeachingForm__c,
+		Type: eventPayload.Type__c,
+		UnitOfScope: eventPayload.UnitOfScope__c,
+		isUpdate: eventPayload.isUpdate__c
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="d686d519-f184-4079-8feb-a0dce85f6b1e" />
+		<amqp:publish doc:name="Publish event to RMQ" doc:id="300534f2-a940-44a7-8b12-ac5879b2e103" config-ref="AMQP_Config" exchangeName="${rabbitmq.exchange}" deliveryMode="PERSISTENT" sendCorrelationId="ALWAYS" requestBrokerConfirms="true">
+			<amqp:routing-keys>
+				<amqp:routing-key value="pocqueue" />
+			</amqp:routing-keys>
+		</amqp:publish>
+	</sub-flow>
+</mule>

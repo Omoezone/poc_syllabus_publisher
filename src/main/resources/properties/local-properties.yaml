@@ -1,0 +1,18 @@
+rabbitmq:
+  host: "localhost"
+  port: "5672"
+  vHost: "/"
+  username: "holdPublisher"
+  password: "holdPublisher"
+  exchange: "eduhubEvents"
+
+sfc:
+  consumerKey: "3MVG9NAs39dXlx5yZWi8u8Dn_CEnfUYlOe50hEpTL2_bA5B83vkLREJfn7TsfWlDOyiao.h7IKF12cwFY70AS"
+  keyStore: 'C:\Users\klj600\kstore\mykeystore.jks'
+  storePassword: "changeit"
+  alias: "myalias"
+  principal: "wiom@adm.ku.dk.kudev"
+  tokenEndpoint: 'https://test.salesforce.com/services/oauth2/token'
+  # audienceURL: En default er givet af connector config.  
+  gRpcHost: "api.pubsub.salesforce.com"
+  gRpcPort: "7443"
